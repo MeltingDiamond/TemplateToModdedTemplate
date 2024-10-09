@@ -19,7 +19,7 @@ def openTemplateBibite(): # Open the
         return
     with open(Template_Bibite_Path, "r") as bibite_file:
         Template_Bibite = json.load(bibite_file)
-    open_template_label.config(text=f'Opened Template: {os.path.basename(Template_Bibite_Path)}')
+    open_template_label.config(text=f'Opened Template: {os.path.basename(Template_Bibite_Path)}') # Display opened bibite template
 
 def loadBibite(): # Open the bibite you want to convert
     global unmodded_bibite
