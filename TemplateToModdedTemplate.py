@@ -103,7 +103,8 @@ def convertBibite(): # Convert the bibite to be compatible with the modded templ
     if converted_bibite["version"] != Template_Bibite["version"]: # Update version if it is different
         converted_bibite["version"] = Template_Bibite["version"]
     
-    status_label.config(text=f"{converted_bibite["name"]} converted hopefully it still works the same")
+    name = converted_bibite["name"]
+    status_label.config(text=f"{name} converted hopefully it still works the same")
     print(json.dumps(converted_bibite, indent=4)) # Print the bibite to the console
 
 if getattr(sys, 'frozen', False):
