@@ -10,9 +10,9 @@ Template_Bibite = {}
 
 window = Tk()
 window.title('Convert Template To Modded')
-window.geometry('600x400')
+window.geometry('700x400')
 
-def openTemplateBibite(): # Open the 
+def openTemplateBibite(): # Open the template to use as template when converting
     global Template_Bibite
     Template_Bibite_Path = filedialog.askopenfilename(initialdir = f'{Template_BB8_folder}' , filetypes=[("Executable files", "*.bb8template")], title="Choose a bibite template to use as template when converting")
     if Template_Bibite_Path == '':
@@ -41,71 +41,49 @@ def convertBibite(): # Convert the bibite to be compatible with the modded templ
     # Copy the original bibite to preserve the original structure
     converted_bibite = unmodded_bibite.copy()
 
-    number = 0
+    # Flag to track if changes were made
+    changes_made = False
 
-    # Iterate through the number of nodes in Template_Bibite that aren't in converted_bibite
-    while True:
-        changed_indexes = []  # This will hold tuples of (original_index, new_index)
-        number += 1
-        print(f"loop {number}")
-        # Use a flag to control when to break out of the inner loop
-        found_difference = False
-        
-        for i, node in enumerate(converted_bibite["nodes"]):
-            index = node["Index"]
+    # Iterate through each node in the template and ensure the converted bibite has the same structure
+    for template_node in Template_Bibite["nodes"]:
+        index = template_node["Index"]
+        corresponding_node = next((n for n in converted_bibite["nodes"] if n["Index"] == index), None)
 
-            # Check if the current node differs from the corresponding node in Template_Bibite
-            template_node = next((n for n in Template_Bibite["nodes"] if n["Index"] == index), None)
+        if not corresponding_node:
+            # Node is missing in the unmodded bibite, insert it
+            converted_bibite["nodes"].append(template_node)
+            print(f"Added missing node with index {template_node['Index']}.")
+            changes_made = True
 
-            if template_node and node != template_node:
-                # If the nodes differ, insert the template node before the current node
-                converted_bibite["nodes"].insert(i, template_node)
-                #changed_indexes.append((index, template_node["Index"]))
-                print(f"Inserted node with index {template_node['Index']} before index {index}.")
-                
-                # Update indexes of every node that follows by one
-                for j in range(i + 1, len(converted_bibite["nodes"])):
-                    original_following_index = converted_bibite["nodes"][j]["Index"]
-                    converted_bibite["nodes"][j]["Index"] += 1  # Increment index by 1
-                    changed_indexes.append((original_following_index, original_following_index + 1))
-                    print(f"Updated node index from {original_following_index} to {converted_bibite['nodes'][j]['Index']}.")
-                
-                found_difference = True
-                break  # Break out of the inner loop
-        
-        # Extract the first elements of the tuples in changed_indexes
-        changed_indices = [index for index, _ in changed_indexes]
+    # Sort nodes based on the Index to maintain order after modifications
+    converted_bibite["nodes"].sort(key=lambda n: n["Index"])
 
-        for synapse in converted_bibite["synapses"]:
-            # Check if NodeIn needs to be changed
-            if synapse['NodeIn'] in changed_indices:
-                # Find the corresponding tuple and update it
-                for index, new_index in changed_indexes:
-                    if synapse['NodeIn'] == index:
-                        synapse['NodeIn'] = new_index
-                        print(f"Changed NodeIn from {index} to {new_index}")
-                        break  # Break to avoid unnecessary iterations
+    # Update synapses with new node indices
+    for synapse in converted_bibite["synapses"]:
+        for template_node in Template_Bibite["nodes"]:
+            if synapse['NodeIn'] == template_node['Index']:
+                print(f"Updated NodeIn from {synapse['NodeIn']} to {template_node['Index']}")
+                synapse['NodeIn'] = template_node['Index']
 
-            # Check if NodeOut needs to be changed
-            if synapse['NodeOut'] in changed_indices:
-                # Find the corresponding tuple and update it
-                for index, new_index in changed_indexes:
-                    if synapse['NodeOut'] == index:
-                        synapse['NodeOut'] = new_index
-                        print(f"Changed NodeOut from {index} to {new_index}")
-                        break  # Break to avoid unnecessary iterations
+            if synapse['NodeOut'] == template_node['Index']:
+                print(f"Updated NodeOut from {synapse['NodeOut']} to {template_node['Index']}")
+                synapse['NodeOut'] = template_node['Index']
 
-        if found_difference:
-            continue  # Continue to the next iteration of the outer loop if a difference was found
-        else:
-            break
-
-    if converted_bibite["version"] != Template_Bibite["version"]: # Update version if it is different
+    # Check and update the version number if needed
+    if converted_bibite["version"] != Template_Bibite["version"]:
         converted_bibite["version"] = Template_Bibite["version"]
-    
-    name = converted_bibite["name"]
-    status_label.config(text=f"{name} converted hopefully it still works the same")
-    print(json.dumps(converted_bibite, indent=4)) # Print the bibite to the console
+        print(f"Updated version to {Template_Bibite['version']}")
+        changes_made = True
+
+    # Display status update in the UI
+    converted_bibite["name"]
+    if changes_made:
+        status_label.config(text="Conversion completed successfully!")
+    else:
+        status_label.config(text="No changes were made during conversion.")
+
+    # Print the converted bibite to the console for debugging
+    print(json.dumps(converted_bibite, indent=4))
 
 if getattr(sys, 'frozen', False):
     # Running as compiled executable
