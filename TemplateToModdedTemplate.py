@@ -35,54 +35,63 @@ def saveBibite():
     with open(Bibite_Path, "w") as bibite_file:
         json.dump(converted_bibite, bibite_file, indent=4)
 
-def convertBibite(): # Convert the bibite to be compatible with the modded template
+def convertBibite():  # Convert the bibite to be compatible with the modded template
     global converted_bibite, unmodded_bibite, Template_Bibite
 
     # Copy the original bibite to preserve the original structure
     converted_bibite = unmodded_bibite.copy()
 
-    # Flag to track if changes were made
-    changes_made = False
+    # List to hold tuples of (original_index, new_index)
+    changed_indexes = []
 
-    # Iterate through each node in the template and ensure the converted bibite has the same structure
+    # Iterate over nodes in Template_Bibite to find missing nodes
     for template_node in Template_Bibite["nodes"]:
         index = template_node["Index"]
-        corresponding_node = next((n for n in converted_bibite["nodes"] if n["Index"] == index), None)
+        
+        # Check if this node exists in converted_bibite
+        existing_node = next((n for n in converted_bibite["nodes"] if n["Index"] == index), None)
 
-        if not corresponding_node:
-            # Node is missing in the unmodded bibite, insert it
-            converted_bibite["nodes"].append(template_node)
-            print(f"Added missing node with index {template_node['Index']}.")
-            changes_made = True
+        if not existing_node:
+            # If the node does not exist, insert it at the correct position
+            # Find the insertion point
+            insert_index = next((i for i, n in enumerate(converted_bibite["nodes"]) if n["Index"] > index), len(converted_bibite["nodes"]))
+            converted_bibite["nodes"].insert(insert_index, template_node)
 
-    # Sort nodes based on the Index to maintain order after modifications
-    converted_bibite["nodes"].sort(key=lambda n: n["Index"])
+            print(f"Inserted node with index {template_node['Index']} at index {insert_index}.")
 
-    # Update synapses with new node indices
-    for synapse in converted_bibite["synapses"]:
-        for template_node in Template_Bibite["nodes"]:
-            if synapse['NodeIn'] == template_node['Index']:
-                print(f"Updated NodeIn from {synapse['NodeIn']} to {template_node['Index']}")
-                synapse['NodeIn'] = template_node['Index']
+            # Update indices of every node that follows by one
+            for j in range(insert_index + 1, len(converted_bibite["nodes"])):
+                original_following_index = converted_bibite["nodes"][j]["Index"]
+                converted_bibite["nodes"][j]["Index"] += 1  # Increment index by 1
+                changed_indexes.append((original_following_index, original_following_index + 1))
+                print(f"Updated node index from {original_following_index} to {converted_bibite['nodes'][j]['Index']}.")
 
-            if synapse['NodeOut'] == template_node['Index']:
-                print(f"Updated NodeOut from {synapse['NodeOut']} to {template_node['Index']}")
-                synapse['NodeOut'] = template_node['Index']
+    # Update synapses based on changed node indexes
+    if converted_bibite["synapses"] is not None:
+        for synapse in converted_bibite["synapses"]:
+            # Check if NodeIn needs to be changed
+            for index, new_index in changed_indexes:
+                if synapse['NodeIn'] == index:
+                    synapse['NodeIn'] = new_index
+                    print(f"Changed NodeIn from {index} to {new_index}")
+                    break  # Exit the inner loop after changing
 
-    # Check and update the version number if needed
-    if converted_bibite["version"] != Template_Bibite["version"]:
+            # Check if NodeOut needs to be changed
+            for index, new_index in changed_indexes:
+                if synapse['NodeOut'] == index:
+                    synapse['NodeOut'] = new_index
+                    print(f"Changed NodeOut from {index} to {new_index}")
+                    break  # Exit the inner loop after changing
+
+    # Ensure version matches
+    if converted_bibite["version"] != Template_Bibite["version"]:  # Update version if it is different
         converted_bibite["version"] = Template_Bibite["version"]
-        print(f"Updated version to {Template_Bibite['version']}")
-        changes_made = True
 
-    # Display status update in the UI
-    converted_bibite["name"]
-    if changes_made:
-        status_label.config(text="Conversion completed successfully!")
-    else:
-        status_label.config(text="No changes were made during conversion.")
-
-    # Print the converted bibite to the console for debugging
+    # Update status label
+    name = converted_bibite["name"]
+    status_label.config(text=f"{name} converted hopefully it still works the same")
+    
+    # Print the bibite to the console for debugging
     print(json.dumps(converted_bibite, indent=4))
 
 if getattr(sys, 'frozen', False):
@@ -92,7 +101,7 @@ else:
     # Running as a standalone Python script
     Template_BB8_folder = f'{script_dir}/Template bb8'
 
-if not os.path.exists(Template_BB8_folder):
+if not os.path.exists(Template_BB8_folder): # Make folder if it does not exist
     os.makedirs(Template_BB8_folder)
 
 open_template_label = Label(window, text="No Template open to use as refrence", font=("Arial", 15))

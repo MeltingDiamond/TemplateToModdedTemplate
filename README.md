@@ -1,4 +1,4 @@
-This will be compatible with 0.6.0.1 mods and future versions, but might also be compatible with older mods.
+This will be compatible with 0.6.0.1 mods and future versions, but might also be compatible with older mods. (If you use correct Template in "Template bb8")
 
 ## What can this do
 This program modifies the Nodes and Synapses to make them compatible with a modded template,
@@ -19,6 +19,7 @@ whilest trying to keep the original function of the bibite as unchainged as poss
 5. The last step is to click "Save converted bibite", choose a bibite template you are ok with overwriting now. The bibite template is now overwritten with the converted bibite.
 
 ## Can you contribute or modify
+**Yes**
 ### Contribute
 If you want to contribute make a new brance do your changes there then make a pull request
 
