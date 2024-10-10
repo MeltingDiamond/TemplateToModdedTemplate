@@ -1,4 +1,4 @@
-import json, os, sys
+import json, os, sys, time
 from tkinter import Tk, filedialog, Button, Label
 from pathlib import Path
 script_dir = Path(__file__).parent.absolute()
@@ -41,20 +41,20 @@ def convertBibite():  # Convert the bibite to be compatible with the modded temp
     # Copy the original bibite to preserve the original structure
     converted_bibite = unmodded_bibite.copy()
 
-    # List to hold tuples of (original_index, new_index)
-    changed_indexes = []
-
     # Iterate over nodes in Template_Bibite to find missing nodes
     for template_node in Template_Bibite["nodes"]:
+        # List to hold tuples of (original_index, new_index)
+        changed_indexes = []
+
         index = template_node["Index"]
         
         # Check if this node exists in converted_bibite
-        existing_node = next((n for n in converted_bibite["nodes"] if n["Index"] == index), None)
+        existing_node = next((converted_node for converted_node in converted_bibite["nodes"] if converted_node == template_node), None)
 
         if not existing_node:
             # If the node does not exist, insert it at the correct position
             # Find the insertion point
-            insert_index = next((i for i, n in enumerate(converted_bibite["nodes"]) if n["Index"] > index), len(converted_bibite["nodes"]))
+            insert_index = next((i for i, node in enumerate(converted_bibite["nodes"]) if node["Index"] >= index), len(converted_bibite["nodes"]))
             converted_bibite["nodes"].insert(insert_index, template_node)
 
             print(f"Inserted node with index {template_node['Index']} at index {insert_index}.")
@@ -124,7 +124,7 @@ convert_bibite_button.pack(pady=10)
 
 # Status Label
 status_label = Label(window, text="", font=("Arial", 12))
-status_label.pack(side="bottom", anchor="s", pady=20)
+status_label.pack(side="bottom", anchor="s", pady=15)
 
 # Runs the app
 window.mainloop()
